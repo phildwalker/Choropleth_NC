@@ -85,16 +85,106 @@ leaflet(BL_ADI) %>%
             title = "ADI State Rank")
 
 
+# Read in population data from ACS dataset
+bg_pop <- readRDS(here::here("data", "ACS_PopEst.rds"))
+
+# Join to spatial dataframe that currently exists
+BL_ADI_POP <- geo_join(BL_ADI, bg_pop, 'GEOID', 'GEOID', how = 'left')
+
+# head(BL_ADI_POP$estimate)
+
+
+BL_ADI_POP@data %>% 
+  ggplot( aes(estimate)) + 
+  geom_histogram(bins = 10) +
+  geom_
+  xlab("Population Estimate") + 
+  # scale_x_continuous(breaks = seq(0,10,1), labels = seq(0,10,1)) +
+  theme_bw()  
 
 
 
+qpal <- colorQuantile("Blues", BL_ADI_POP@data$estimate, n = 7)
+
+POPpal <- colorNumeric(
+  palette = "YlGnBu",
+  domain = BL_ADI_POP@data$estimate
+)
+
+popupADI <- paste("<strong>", BL_ADI_POP@data$County, "</strong>",
+                 "<br/>",
+                 "Tract: ", BL_ADI_POP@data$Tract,
+                 "<br/>",
+                 "Block Group: ", BL_ADI_POP@data$BG,
+                 "<br/>",
+                 "ADI Rank: ", BL_ADI_POP@data$adi_staternk,
+                 "<br/>",
+                 "Population: ", BL_ADI_POP@data$estimate,
+                 sep="") %>%
+  lapply(htmltools::HTML)
+
+popupPOP <- paste("<strong>", BL_ADI_POP@data$County, "</strong>",
+                  "<br/>",
+                  "Tract: ", BL_ADI_POP@data$Tract,
+                  "<br/>",
+                  "Block Group: ", BL_ADI_POP@data$BG,
+                  "<br/>",
+                  "ADI Rank: ", BL_ADI_POP@data$adi_staternk,
+                  "<br/>",
+                  "Population: ", BL_ADI_POP@data$estimate,
+                  sep="") %>%
+  lapply(htmltools::HTML)
+
+
+leaflet(BL_ADI_POP) %>%
+  addTiles() %>%
+  addPolygons(label = ~popupADI,
+              group = "ADI Rank",
+              fillColor = ~pal(adi_staternk),
+              color = "#444444",
+              weight = 1,
+              smoothFactor = 0.5,
+              opacity = 1.0,
+              fillOpacity = 0.5,
+              highlightOptions = highlightOptions(color = "white",
+                                                  weight = 2,
+                                                  bringToFront = TRUE),
+              labelOptions = labelOptions(
+                style = list("font-weight" = "normal", padding = "3px 8px"),
+                textsize = "15px",
+                direction = "auto")) %>%
+  addPolygons(label = ~popupPOP,
+              group = "Population",
+              fillColor = ~POPpal(estimate),
+              color = "#444444",
+              weight = 1,
+              smoothFactor = 0.5,
+              opacity = 1.0,
+              fillOpacity = 0.5,
+              highlightOptions = highlightOptions(color = "white",
+                                                  weight = 2,
+                                                  bringToFront = TRUE),
+              labelOptions = labelOptions(
+                style = list("font-weight" = "normal", padding = "3px 8px"),
+                textsize = "15px",
+                direction = "auto")) %>%
+  addLegend(pal = pal,
+            values = ~adi_staternk,
+            opacity = 0.7,
+            title = NULL,
+            position = "bottomright",
+            group = "ADI Rank") %>%
+  addLegend(pal = POPpal,
+            values = ~estimate,
+            opacity = 0.7,
+            title = NULL,
+            position = "bottomright",
+            group = "Population") %>%
+  addLayersControl(overlayGroups = c("ADI Rank", "Population"),
+                   options = layersControlOptions(collapsed = FALSE)) 
 
 
 
-
-
-
-  
   
   
   
